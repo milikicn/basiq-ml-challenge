@@ -9,17 +9,17 @@ from utils import store_classification_results
 
 # Load the data
 
-with open('data/X_train_tfidf.pickle', 'rb') as data:
-    X_train_tfidf = pickle.load(data)
+with open('data/X_train_tfidf.pickle', 'rb') as content:
+    X_train_tfidf = pickle.load(content)
 
-with open('data/Y_train.pickle', 'rb') as data:
-    Y_train = pickle.load(data)
+with open('data/Y_train.pickle', 'rb') as content:
+    Y_train = pickle.load(content)
 
-with open('data/X_test_tfidf.pickle', 'rb') as data:
-    X_test_tfidf = pickle.load(data)
+with open('data/X_test_tfidf.pickle', 'rb') as content:
+    X_test_tfidf = pickle.load(content)
 
-with open('data/Y_test.pickle', 'rb') as data:
-    Y_test = pickle.load(data)
+with open('data/Y_test.pickle', 'rb') as content:
+    Y_test = pickle.load(content)
 
 naive_bayes_clf = ComplementNB()
 naive_bayes_clf.fit(X_train_tfidf, Y_train)
@@ -36,10 +36,11 @@ f1_test = f1_score(Y_test, naive_bayes_predictions, average='weighted')
 print(f1_test)
 # 0.8346455563603166
 
-# write the scores to the results.pickle
-store_classification_results("naive_bayes", f1_train, f1_test)
+bayes_model_path = 'models/naive_bayes.pickle'
 
+# write the scores to the results.pickle
+store_classification_results("naive_bayes", f1_train, f1_test, bayes_model_path)
 
 # serialize the model
-with open('models/naive_bayes.pickle', 'wb') as output:
+with open(bayes_model_path, 'wb') as output:
     pickle.dump(naive_bayes_clf, output)

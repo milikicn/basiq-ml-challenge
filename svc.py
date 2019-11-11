@@ -7,21 +7,19 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import f1_score
 from utils import store_classification_results
 
-
 # Load the data
 
-with open('data/X_train_tfidf.pickle', 'rb') as data:
-    X_train_tfidf = pickle.load(data)
+with open('data/X_train_tfidf.pickle', 'rb') as content:
+    X_train_tfidf = pickle.load(content)
 
-with open('data/Y_train.pickle', 'rb') as data:
-    Y_train = pickle.load(data)
+with open('data/Y_train.pickle', 'rb') as content:
+    Y_train = pickle.load(content)
 
-with open('data/X_test_tfidf.pickle', 'rb') as data:
-    X_test_tfidf = pickle.load(data)
+with open('data/X_test_tfidf.pickle', 'rb') as content:
+    X_test_tfidf = pickle.load(content)
 
-with open('data/Y_test.pickle', 'rb') as data:
-    Y_test = pickle.load(data)
-
+with open('data/Y_test.pickle', 'rb') as content:
+    Y_test = pickle.load(content)
 
 # HYPERPARAMETER TUNING
 
@@ -55,18 +53,18 @@ C_range = [.0001, .001, .01, .1, 1, 10]
 
 # Create the random grid
 param_grid = {'C': C_range,
-             'kernel': ['linear'],
-             'probability': [True]
-             }
+              'kernel': ['linear'],
+              'probability': [True]
+              }
 
 svc_grid_clf = svm.SVC(random_state=123)
 
 # Instantiate the grid search model
 grid_search = GridSearchCV(estimator=svc_grid_clf,
-                          param_grid=param_grid,
-                          scoring='f1_weighted',
-                          cv=3,
-                          verbose=1)
+                           param_grid=param_grid,
+                           scoring='f1_weighted',
+                           cv=3,
+                           verbose=1)
 
 # Fit the grid search to the data
 grid_search.fit(X_train_tfidf, Y_train)
@@ -90,10 +88,11 @@ f1_test = f1_score(Y_test, svc_clf, average='weighted')
 print(f1_test)
 #
 
-# write the scores to the results.pickle
-store_classification_results("SVC", f1_train, f1_test)
+svc_model_path = 'models/svc.pickle'
 
+# write the scores to the results.pickle
+store_classification_results("SVC", f1_train, f1_test, svc_model_path)
 
 # serialize the model
-with open('models/svc.pickle', 'wb') as output:
-   pickle.dump(svc_clf, output)
+with open(svc_model_path, 'wb') as output:
+    pickle.dump(svc_clf, output)
