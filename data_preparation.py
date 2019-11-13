@@ -1,14 +1,11 @@
 import pickle
 import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
-
-from BasiqTfidfVectorizer import BasiqTfidfVectorizer
-from feature_engineering_utils import preprocess_transaction_description, create_transaction_type_feature, \
-    concat_tfidf_vector_with_factor_features
+from feature_engineering_utils import preprocess_transaction_description, create_transaction_type_feature
 
 # load the transactions dataset
 transactions = pd.read_csv("data/train-dataset.csv")
-
 
 ####################
 # INSPECT THE DATA
@@ -62,15 +59,13 @@ transactions.transaction_class.value_counts()
 # refund              7933
 # bank-fee            2991
 
-# Conclusion: the dataset is imbalanced. Precision/Recall or F1 should be used for measuring performance.
-
 
 # Perform feature transformation
 transactions["description_cleaned"] = preprocess_transaction_description(transactions["transaction_description"])
 transactions['transaction_type'] = create_transaction_type_feature(transactions['transaction_amount'])
 
 # Serialize to file
-transactions.to_csv("data/transactions_preprocessed.csv")
+transactions.to_csv("data/transactions_preprocessed.csv", index=False)
 
 ##############################
 # CREATE TRAIN AND TEST SETS
@@ -100,36 +95,49 @@ with open('data/Y_test.pickle', 'wb') as output:
 ######################
 
 # create a TF-IDF vectorizer
-tfidf_vectorizer = BasiqTfidfVectorizer()
+tfidf_vectorizer = TfidfVectorizer(encoding='utf-8',
+                                   ngram_range=(1, 3),  # we want to create unigrams, bigrams and trigrams
+                                   stop_words=None,  # already applied
+                                   lowercase=False,  # already applied
+                                   max_df=0.95,
+                                   # remove all terms that have document frequency higher than 95th percentile
+                                   min_df=0.025,
+                                   # remove all terms that have document frequency lower than 2.5th percentile
+                                   max_features=200,
+                                   norm='l2',
+                                   sublinear_tf=True)
 
 # calculate the TF-IDF scores on the training dataset
-X_train_tfidf = tfidf_vectorizer.fit_transform(X_train["description_cleaned"])
+X_train_tfidf = tfidf_vectorizer.fit_transform(X_train["description_cleaned"]).toarray()
 print(X_train_tfidf.shape)
-
+print(tfidf_vectorizer.get_feature_names())
 
 # Since tfidf_vector is an ndarray, we transform it to a data frame. Note that this new df has reset indices
 # compared to the original df. Add dummy variables of transaction_type and transaction_account_type, but reset their
 # indices in order to perform a successful concat.
 X_train_tfidf = pd.concat([pd.DataFrame(X_train_tfidf, columns=tfidf_vectorizer.get_feature_names()),
-                           pd.get_dummies(X_train['transaction_type'].reset_index(drop=True)),
-                           pd.get_dummies(X_train['transaction_account_type'].reset_index(drop=True))],
+                           pd.get_dummies(X_train['transaction_type'].reset_index(drop=True), prefix="type"),
+                           pd.get_dummies(X_train['transaction_account_type'].reset_index(drop=True),
+                                          prefix="account_type")],
                           axis=1)
 
-# calculate the TF-IDF scores for the test dataset
-X_test_tfidf = tfidf_vectorizer.transform(X_test["description_cleaned"])
+# calculate the TF-IDF scores over the test dataset
+X_test_tfidf = tfidf_vectorizer.transform(X_test["description_cleaned"]).toarray()
 print(X_test_tfidf.shape)
 
 # similar to the previous, convert it to df
-X_test_tfidf = tfidf_vectorizer.concat_tfidf_vector_with_factor_features(X_test_tfidf,
-                                                                         X_test['transaction_type'],
-                                                                         X_test['transaction_account_type'])
+X_test_tfidf = pd.concat([pd.DataFrame(X_test_tfidf, columns=tfidf_vectorizer.get_feature_names()),
+                          pd.get_dummies(X_test['transaction_type'].reset_index(drop=True), prefix="type"),
+                          pd.get_dummies(X_test['transaction_account_type'].reset_index(drop=True),
+                                         prefix="account_type")],
+                         axis=1)
 
-# Serialize files
+# Serialize data
 with open('data/X_train_tfidf.pickle', 'wb') as output:
     pickle.dump(X_train_tfidf, output)
 
 with open('data/X_test_tfidf.pickle', 'wb') as output:
     pickle.dump(X_test_tfidf, output)
 
-with open('models/basiq_tfidf_vectorizer.pickle', 'wb') as output:
+with open('models/tfidf_vectorizer.pickle', 'wb') as output:
     pickle.dump(tfidf_vectorizer, output)

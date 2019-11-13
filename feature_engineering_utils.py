@@ -11,12 +11,13 @@ def lowercase(feature: pd.Series):
 
 
 def replace_date_time_with_tokens(feature: pd.Series):
-    """Search for date and time occurrences in the text and introduce DATETOKEN and TIMETOKEN instead."""
+    """Search for date and time occurrences in the text and replace them with the DATETOKEN and TIMETOKEN tokens."""
 
     # Create a regex expressions for all date formats found in the dataset. Date can be prefixed with the string "Date"
     # or "Date:".
-    expanded_date_regex = "(date(:)?(\\s)?)?\\d{1,2}\\s+(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\\s+\\d{4}"
-    short_date_regex = "(date(:)?(\s)?)?[\d+]{1,2}[- /.][\d+]{1,2}[- /.][\d+]{4}"
+    expanded_date_regex = "(date(:)?(\\s)?)?\\d{1,2}\\s+(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(" \
+                          "y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\\s+\\d{4}"
+    short_date_regex = "(date(:)?(\\s)?)?[\\d+]{1,2}[- /.][\\d+]{1,2}[- /.][\\d+]{4}"
     # Create a regex expression for the time format found in the dataset
     time_regex = "(time(:)?\\s)?([0-9]{2}:[0-9]{2})(am|pm)?"
 
@@ -35,21 +36,24 @@ def replace_abbreviations(feature: pd.Series):
     # This should be expanded with more terms.
     abbreviations_dict = {
         "w/d": "withdrawal",
-        "trf": "transfer"
+        "trf": "transfer",
+        "tfr": "transfer",
+        "tfer": "transfer",
+        "pymt": "payment"
     }
-    return feature.str.replace(abbreviations_dict, regex=True)
+    return feature.replace(abbreviations_dict, regex=True)
 
 
 def remove_punctuations(feature: pd.Series):
-    """Remove punctuation symbols"""
+    """Remove punctuation symbols."""
     return feature.apply(lambda x: x.translate(str.maketrans(string.punctuation, ' ' * 32)))
 
 
 def replace_receipts_with_token(feature: pd.Series):
-    """Replace receipt number with RECEIPTTOKEN"""
+    """Replace receipt number with the RECEIPTTOKEN."""
 
     # Create a regex expression that searches for e.g. "Receipt 167448"
-    receipt_number_regex = "(receipt)\s+([\w|*]{5,30})\\b"
+    receipt_number_regex = "(receipt)\\s+([\\w|*]{5,30})\\b"
 
     # Replace receipt occurrences with the RECEIPTTOKEN
     return feature.str.replace(receipt_number_regex, "RECEIPTTOKEN")
@@ -59,16 +63,16 @@ def replace_long_numbers_with_tokens(feature: pd.Series):
     """Replace long numbers with a NUMBERTOKEN (that could be an indicator of an account number or some id).
     This is to be checked whether it makes sense."""
 
-    # Create a regex expression that searches for numbers with more that 4 digits. Also, support masked digits
+    # Create a regex expression that searches for numbers with more that 5 digits. Also, support masked digits
     # (i.e. 498691xxxxxx8454) or having any other letter (e.g. 709926s77.2)
-    long_number_regex = "[0-9]{4,15}(\w+)?([0-9]{1,10})"
+    long_number_regex = "[0-9]{5,15}(\\w+)?([0-9]{1,10})"
 
     # Replace long number occurrences with the NUMBERTOKEN
     return feature.str.replace(long_number_regex, "NUMBERTOKEN")
 
 
 def lematize(feature: pd.Series):
-    """Perform lematization"""
+    """Perform lematization over the text based on the Wordnet corpora."""
 
     # Downloading wordnet from NLTK
     nltk.download('wordnet')
@@ -81,7 +85,7 @@ def lematize(feature: pd.Series):
 
 
 def remove_stopwords(feature: pd.Series):
-    """Remove stopwords"""
+    """Remove stopwords (from the NTLK package)."""
 
     # Download the stop words list
     nltk.download('stopwords')
@@ -99,20 +103,22 @@ def remove_numbers(feature: pd.Series):
 
 
 def remove_short_words(feature: pd.Series):
-    """Remove words with one or two letters (assuming they don't bring any value to the classifier)"""
+    """Remove words with one or two letters (assumes they don't bring any value to the classifier)."""
     return feature.str.replace("\\b[\\w]{1,2}\\b", " ")
 
 
 def trim_whitespace(feature: pd.Series):
-    """Trim whitespaces"""
+    """Trim whitespaces."""
     return feature.str.replace("\\s+", " ")
 
 
 def preprocess_transaction_description(description: pd.Series):
+    """Run the preprocessing steps over the Series object containing transaction descriptions."""
+
     return description \
         .pipe(lowercase) \
         .pipe(replace_date_time_with_tokens) \
-        .pipe(replace_date_time_with_tokens) \
+        .pipe(replace_abbreviations) \
         .pipe(remove_punctuations) \
         .pipe(replace_receipts_with_token) \
         .pipe(replace_long_numbers_with_tokens) \
@@ -124,17 +130,5 @@ def preprocess_transaction_description(description: pd.Series):
 
 
 def create_transaction_type_feature(transaction_amount: pd.Series):
-    """Based on the transaction_amount value, create a new variable transaction_type"""
+    """Based on the transaction_amount value, create a new variable transaction_type."""
     return np.where(transaction_amount > 0, 'debit', 'credit')
-
-
-def concat_tfidf_vector_with_factor_features(self, tfidf_vector: str, *factor_features):
-    # Since tfidf_vector is an ndarray, we transform it to a data frame. Note that this new df has reset indices
-    # compared to the original df.
-    feature_list = [pd.DataFrame(tfidf_vector, columns=self.get_feature_names())]
-
-    # Add dummy variables of other factor_features, but reset their indices in order to perform a successful concat.
-    for feature in factor_features:
-        feature_list.append(pd.get_dummies(feature.reset_index(drop=True)))
-
-    return pd.concat(feature_list, axis=1)

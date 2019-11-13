@@ -5,6 +5,8 @@ import pickle
 from sklearn import svm
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import f1_score
+from sklearn.svm import SVC
+
 from utils import store_classification_results
 
 # Load the data
@@ -23,7 +25,7 @@ with open('data/Y_test.pickle', 'rb') as content:
 
 # HYPERPARAMETER TUNING
 
-"""Because of the time and computing limitations of my local machine, I will present a simplified approach to seaching
+"""Because of the time and computing limitations of my local machine, I will present a simplified approach to searching
 for optimal parameters for the SVM classifier.
 
 In the real project, the parameter tuning phase would include two steps:
@@ -46,8 +48,8 @@ In the real project, the parameter tuning phase would include two steps:
     Then we would vary the values of this parameter, e.g. 1, 2, 3, 4, 5]"""
 
 """In my case, due to time and computation resource limitations, I will use only 'linear' kernel since it is the 
-simplest one, the fastest one, and with the least parameters to tune. This kernel only requires setting the C
-parameter."""
+simplest one, the fastest one, and with the least parameters to tune. This kernel only requires setting the C 
+parameter. """
 
 C_range = [.0001, .001, .01, .1, 1, 10]
 
@@ -62,7 +64,7 @@ svc_grid_clf = svm.SVC(random_state=123)
 # Instantiate the grid search model
 grid_search = GridSearchCV(estimator=svc_grid_clf,
                            param_grid=param_grid,
-                           scoring='f1_weighted',
+                           scoring="f1_weighted",
                            cv=3,
                            verbose=1)
 
@@ -71,22 +73,24 @@ grid_search.fit(X_train_tfidf, Y_train)
 
 print("The best hyperparameters from Grid Search are:")
 print(grid_search.best_params_)
-#
+# {'C': 10, 'kernel': 'linear', 'probability': True}
 
-# use the best performing parameter configuration for out classification problem
-svc_clf = grid_search.best_estimator_
+# use the best performing parameter configuration for our classification problem
+svc_clf = SVC(kernel='linear',
+              probability=True,
+              C=10)
 svc_clf.fit(X_train_tfidf, Y_train)
 svc_pred = svc_clf.predict(X_test_tfidf)
 
 # F1 on training dataset (in order to check for overfitting)
 f1_train = f1_score(Y_train, svc_clf.predict(X_train_tfidf), average='weighted')
 print(f1_train)
-#
+# 0.9906270634130447
 
 # F1 on test dataset
-f1_test = f1_score(Y_test, svc_clf, average='weighted')
+f1_test = f1_score(Y_test, svc_pred, average='weighted')
 print(f1_test)
-#
+# 0.9900532711808548
 
 svc_model_path = 'models/svc.pickle'
 

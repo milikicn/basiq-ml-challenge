@@ -1,10 +1,10 @@
-import os
-import pickle
 import pandas as pd
 
 
 def store_classification_results(algorithm_name: str, f1_train: float, f1_test: float, model_path: str,
                                  results_file_path="data/results.csv"):
+    """Store the results of a classification process into a CSV file."""
+
     results_df = None
 
     try:
@@ -27,10 +27,12 @@ def store_classification_results(algorithm_name: str, f1_train: float, f1_test: 
             'model_path': model_path
         }, ignore_index=True)
 
-    results_df.to_csv(results_file_path)
+    results_df.to_csv(results_file_path, index=False)
 
 
 def get_classification_results(results_file_path="data/results.csv"):
+    """Retrieve the file with the classification results."""
+
     try:
         return pd.read_csv(results_file_path)
     except FileNotFoundError:
@@ -38,6 +40,8 @@ def get_classification_results(results_file_path="data/results.csv"):
 
 
 def print_classification_results(results_file_path="data/results.csv"):
+    """Print the classification results from the file containing this information."""
+
     results_df = get_classification_results(results_file_path)
 
     if results_df is not None:

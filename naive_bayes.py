@@ -6,7 +6,6 @@ from sklearn.naive_bayes import ComplementNB
 from sklearn.metrics import f1_score
 from utils import store_classification_results
 
-
 # Load the data
 
 with open('data/X_train_tfidf.pickle', 'rb') as content:
@@ -29,12 +28,12 @@ naive_bayes_predictions = naive_bayes_clf.predict(X_test_tfidf)
 # F1 on training dataset (in order to check for overfitting)
 f1_train = f1_score(Y_train, naive_bayes_clf.predict(X_train_tfidf), average='weighted')
 print(f1_train)
-# 0.830871129293846
+# 0.944752498906083
 
 # F1 on test dataset
 f1_test = f1_score(Y_test, naive_bayes_predictions, average='weighted')
 print(f1_test)
-# 0.8346455563603166
+# 0.9447458900795492
 
 bayes_model_path = 'models/naive_bayes.pickle'
 

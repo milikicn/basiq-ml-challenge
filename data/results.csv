@@ -1,0 +1,3 @@
+algorithm,f1_train,f1_test,model_path
+naive_bayes,0.9447524989060829,0.9447458900795492,models/naive_bayes.pickle
+SVC,0.9906270634130447,0.9900532711808548,models/svc.pickle
