@@ -2,7 +2,7 @@ import pickle
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.model_selection import train_test_split
-from feature_engineering_utils import preprocess_transaction_description, create_transaction_type_feature
+from feature_engineering_util import preprocess_transaction_description, create_transaction_type_feature
 
 # load the transactions dataset
 transactions = pd.read_csv("data/train-dataset.csv")

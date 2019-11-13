@@ -7,7 +7,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import f1_score
 from sklearn.svm import SVC
 
-from utils import store_classification_results
+from result_util import store_classification_results
 
 # Load the data
 

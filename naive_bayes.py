@@ -4,7 +4,7 @@
 import pickle
 from sklearn.naive_bayes import ComplementNB
 from sklearn.metrics import f1_score
-from utils import store_classification_results
+from result_util import store_classification_results
 
 # Load the data
 
